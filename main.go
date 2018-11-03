@@ -1,11 +1,18 @@
 package main
 
-import (
-	"container/heap"
-	"fmt"
-	"math"
-	"os"
-)
+import "fmt"
+
+//import "os"
+import "container/heap"
+import "os"
+import "math"
+
+/**
+ * Auto-generated code below aims at helping you parse
+ * the standard input according to the problem statement.
+ * ---
+ * Hint: You can use the debug stream to print initialTX and initialTY, if Thor seems not follow your orders.
+ **/
 
 type PriorityQueue []*Node
 
@@ -46,23 +53,29 @@ type Node struct {
 	Parent *Node
 	H      float64
 	index  int
+	Dir    string
 }
 
 var (
 	dirs = map[string][2]int{
-		"north": [2]int{1, 0},
-		"south": [2]int{-1, 0},
-		"east":  [2]int{0, 1},
-		"west":  [2]int{0, -1},
+		"E":  [2]int{1, 0},
+		"W":  [2]int{-1, 0},
+		"S":  [2]int{0, 1},
+		"SE": [2]int{1, 1},
+		"SW": [2]int{-1, 1},
+		"N":  [2]int{0, -1},
+		"NE": [2]int{1, -1},
+		"NW": [2]int{-1, -1},
 	}
 )
 
-func (n *Node) Neighbours() (neighbours [4]Node) {
+func (n *Node) Neighbours() (neighbours [8]Node) {
 	i := 0
-	for _, dir := range dirs {
+	for key, dir := range dirs {
 		neighbours[i] = Node{
-			X: n.X + dir[0],
-			Y: n.Y + dir[1],
+			X:   n.X + dir[0],
+			Y:   n.Y + dir[1],
+			Dir: key,
 		}
 		i++
 	}
@@ -83,6 +96,11 @@ func ManhatanDistance(start, destination Node) (H float64) {
 	return
 }
 
+func PointDistance(start, destination Node) (H float64) {
+	H = math.Sqrt(math.Pow(float64(start.X-destination.X), 2) + math.Pow(float64(start.Y-destination.Y), 2))
+	return
+}
+
 func In(nodes []*Node, toFind Node) (found bool) {
 	for _, node := range nodes {
 		if node.Eq(&toFind) {
@@ -94,41 +112,75 @@ func In(nodes []*Node, toFind Node) (found bool) {
 }
 
 func main() {
+	// lightX: the X position of the light of power
+	// lightY: the Y position of the light of power
+	// initialTX: Thor's starting X position
+	// initialTY: Thor's starting Y position
+	var lightX, lightY, initialTX, initialTY int
+	fmt.Scan(&lightX, &lightY, &initialTX, &initialTY)
 	var (
 		openSet   PriorityQueue
 		closedSet []*Node
-		startNode Node
+		startNode *Node
 	)
-
-	startNode = Node{
-		X: 28,
-		Y: 17,
+	startNode = &Node{
+		X: initialTX,
+		Y: initialTY,
 	}
 
 	destinationNode := Node{
-		X: 37,
-		Y: 25,
+		X: lightX,
+		Y: lightY,
 	}
 
 	currentNode := startNode
 	heap.Init(&openSet)
-	for !currentNode.Eq(&destinationNode) {
-		neighbours := currentNode.Neighbours()
-		for i := range neighbours {
-			if In(closedSet, neighbours[i]) {
-				continue
-			} else {
-				neighbours[i].Parent = &currentNode
-				if !In(openSet, neighbours[i]) {
-					neighbours[i].H = ManhatanDistance(neighbours[i], destinationNode)
-					fmt.Fprintf(os.Stderr, "Pushing {node: %v x -> %d; y -> %d; h -> %.2f} into heap\n", neighbours[i], neighbours[i].X, neighbours[i].Y, neighbours[i].H)
-					heap.Push(&openSet, &neighbours[i])
+
+	for {
+		// remainingTurns: The remaining amount of turns Thor can move. Do not remove this line.
+		var remainingTurns int
+		fmt.Scan(&remainingTurns)
+		for !currentNode.Eq(&destinationNode) {
+			neighbours := currentNode.Neighbours()
+			for i := range neighbours {
+				if In(closedSet, neighbours[i]) {
+					continue
+				} else {
+					neighbours[i].Parent = currentNode
+					if !In(openSet, neighbours[i]) {
+						neighbours[i].H = PointDistance(neighbours[i], destinationNode)
+						fmt.Fprintf(os.Stderr, "Pushing {node: %v x -> %d; y -> %d; h -> %.2f} into heap\n", neighbours[i], neighbours[i].X, neighbours[i].Y, neighbours[i].H)
+						heap.Push(&openSet, &neighbours[i])
+					}
 				}
 			}
+
+			if openSet.Len() <= 0 {
+				break
+			}
+
+			currentNode = heap.Pop(&openSet).(*Node)
+			closedSet = append(closedSet, currentNode)
+			fmt.Fprintf(os.Stderr, "Moving to {node: %v x -> %d; y -> %d; h -> %.2f} tile\n", currentNode, currentNode.X, currentNode.Y, currentNode.H)
 		}
 
-		currentNode = *heap.Pop(&openSet).(*Node)
-		closedSet = append(closedSet, &currentNode)
-		fmt.Fprintf(os.Stderr, "Moving to {node: %v x -> %d; y -> %d; h -> %.2f} tile\n", currentNode, currentNode.X, currentNode.Y, currentNode.H)
+		var path []*Node
+		if currentNode.Eq(&destinationNode) {
+			n := closedSet[len(closedSet)-1]
+			for n != nil {
+				path = append(path, n)
+				n = n.Parent
+			}
+		} else {
+			fmt.Fprintf(os.Stderr, "path unsolvable")
+			os.Exit(1)
+		}
+		for i, node := range path {
+			fmt.Fprintf(os.Stderr, "%d tile -> x: %d; y: %d; dir -> %s\n", i, node.X, node.Y, node.Dir)
+			fmt.Println(node.Dir)
+		}
+		// fmt.Fprintln(os.Stderr, "Debug messages...")
+
+		// A single line providing the move to be made: N NE E SE S SW W or NW
 	}
 }
