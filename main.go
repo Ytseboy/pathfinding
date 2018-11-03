@@ -7,32 +7,49 @@ import (
 
 type PriorityQueue []*Node
 
-func (pq *PriorityQueue) Len() int {
-	panic("not implemented")
+func (pq PriorityQueue) Len() int {
+	return len(pq)
 }
 
-func (pq *PriorityQueue) Less(i int, j int) bool {
-	panic("not implemented")
+func (pq PriorityQueue) Less(i int, j int) bool {
+	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
+	return pq[i].H > pq[j].H
 }
 
-func (pq *PriorityQueue) Swap(i int, j int) {
-	panic("not implemented")
+func (pq PriorityQueue) Swap(i int, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index = i
+	pq[j].index = j
 }
 
 func (pq *PriorityQueue) Push(x interface{}) {
-	panic("not implemented")
+	n := len(*pq)
+	item := x.(*Node)
+	item.index = n
+	*pq = append(*pq, item)
 }
 
 func (pq *PriorityQueue) Pop() interface{} {
-	panic("not implemented")
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	item.index = -1 // for safety
+	*pq = old[0 : n-1]
+	return item
 }
+
+// func (pq *PriorityQueue) update(item *Node, value string, priority int) {
+// 	item.value = value
+// 	item.H = priority
+// 	heap.Fix(pq, item.index)
+// }
 
 type Node struct {
 	X      int
 	Y      int
 	Parent *Node
 	H      float64
-	Index  int
+	index  int
 }
 
 var (
@@ -71,7 +88,7 @@ func ManhatanDistance(start, destination Node) (H float64) {
 
 func main() {
 	var (
-		openSet   []Node
+		openSet   PriorityQueue
 		closedSet []Node
 		startNode Node
 	)
@@ -91,7 +108,7 @@ func main() {
 	for _, node := range startNode.Neighbours() {
 		node.Parent = &currentNode
 		node.H = ManhatanDistance(startNode, destinationNode)
-		openSet = append(openSet, node)
+		openSet.Push(node)
 	}
 	fmt.Println("hello world")
 }
