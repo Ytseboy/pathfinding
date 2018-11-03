@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -110,5 +109,4 @@ func main() {
 		node.H = ManhatanDistance(startNode, destinationNode)
 		openSet.Push(node)
 	}
-	fmt.Println("hello world")
 }
