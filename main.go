@@ -3,7 +3,6 @@ package main
 import (
 	"container/heap"
 	"fmt"
-	"log"
 	"math"
 	"os"
 )
@@ -16,7 +15,7 @@ func (pq PriorityQueue) Len() int {
 
 func (pq PriorityQueue) Less(i int, j int) bool {
 	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq[i].H > pq[j].H
+	return pq[i].H < pq[j].H
 }
 
 func (pq PriorityQueue) Swap(i int, j int) {
@@ -107,8 +106,8 @@ func main() {
 	}
 
 	destinationNode := Node{
-		X: 48,
-		Y: 17,
+		X: 37,
+		Y: 25,
 	}
 
 	currentNode := startNode
@@ -116,17 +115,19 @@ func main() {
 	heap.Init(&openSet)
 
 	neighbours := startNode.Neighbours()
-	for i, node := range neighbours {
-		if In(closedSet, node) {
+	for i := range neighbours {
+		if In(closedSet, neighbours[i]) {
 			continue
 		} else {
-			node.Parent = &currentNode
-			if !In(openSet, node) {
-				fmt.Fprintf(os.Stderr, "Pushing {node: %v x -> %d; y -> %d} into heap\n", node, node.X, node.Y)
-				node.H = ManhatanDistance(startNode, destinationNode)
+			neighbours[i].Parent = &currentNode
+			if !In(openSet, neighbours[i]) {
+				neighbours[i].H = ManhatanDistance(neighbours[i], destinationNode)
+				fmt.Fprintf(os.Stderr, "Pushing {node: %v x -> %d; y -> %d; h -> %.2f} into heap\n", neighbours[i], neighbours[i].X, neighbours[i].Y, neighbours[i].H)
 				heap.Push(&openSet, &neighbours[i])
 			}
 		}
 	}
-	log.Println(neighbours)
+
+	newNode := heap.Pop(&openSet).(*Node)
+	fmt.Fprintf(os.Stderr, "Moving to {node: %v x -> %d; y -> %d; h -> %.2f} into heap\n", newNode, newNode.X, newNode.Y, newNode.H)
 }
