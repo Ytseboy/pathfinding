@@ -1,7 +1,11 @@
 package main
 
 import (
+	"container/heap"
+	"fmt"
+	"log"
 	"math"
+	"os"
 )
 
 type PriorityQueue []*Node
@@ -37,12 +41,6 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-// func (pq *PriorityQueue) update(item *Node, value string, priority int) {
-// 	item.value = value
-// 	item.H = priority
-// 	heap.Fix(pq, item.index)
-// }
-
 type Node struct {
 	X      int
 	Y      int
@@ -54,7 +52,7 @@ type Node struct {
 var (
 	dirs = map[string][2]int{
 		"north": [2]int{1, 0},
-		"south": [2]int{0, -1},
+		"south": [2]int{-1, 0},
 		"east":  [2]int{0, 1},
 		"west":  [2]int{0, -1},
 	}
@@ -74,7 +72,8 @@ func (n *Node) Neighbours() (neighbours [4]Node) {
 
 func (n *Node) Eq(comp *Node) (isEq bool) {
 	if n.X == comp.X && n.Y == comp.Y {
-		return true
+		isEq = true
+		return
 	}
 
 	return
@@ -85,10 +84,20 @@ func ManhatanDistance(start, destination Node) (H float64) {
 	return
 }
 
+func In(nodes []*Node, toFind Node) (found bool) {
+	for _, node := range nodes {
+		if node.Eq(&toFind) {
+			found = true
+			return
+		}
+	}
+	return
+}
+
 func main() {
 	var (
 		openSet   PriorityQueue
-		closedSet []Node
+		closedSet []*Node
 		startNode Node
 	)
 
@@ -104,9 +113,20 @@ func main() {
 
 	currentNode := startNode
 
-	for _, node := range startNode.Neighbours() {
-		node.Parent = &currentNode
-		node.H = ManhatanDistance(startNode, destinationNode)
-		openSet.Push(node)
+	heap.Init(&openSet)
+
+	neighbours := startNode.Neighbours()
+	for i, node := range neighbours {
+		if In(closedSet, node) {
+			continue
+		} else {
+			node.Parent = &currentNode
+			if !In(openSet, node) {
+				fmt.Fprintf(os.Stderr, "Pushing {node: %v x -> %d; y -> %d} into heap\n", node, node.X, node.Y)
+				node.H = ManhatanDistance(startNode, destinationNode)
+				heap.Push(&openSet, &neighbours[i])
+			}
+		}
 	}
+	log.Println(neighbours)
 }
