@@ -101,7 +101,7 @@ func main() {
 	)
 
 	startNode = Node{
-		X: 37,
+		X: 28,
 		Y: 17,
 	}
 
@@ -111,23 +111,24 @@ func main() {
 	}
 
 	currentNode := startNode
-
 	heap.Init(&openSet)
-
-	neighbours := startNode.Neighbours()
-	for i := range neighbours {
-		if In(closedSet, neighbours[i]) {
-			continue
-		} else {
-			neighbours[i].Parent = &currentNode
-			if !In(openSet, neighbours[i]) {
-				neighbours[i].H = ManhatanDistance(neighbours[i], destinationNode)
-				fmt.Fprintf(os.Stderr, "Pushing {node: %v x -> %d; y -> %d; h -> %.2f} into heap\n", neighbours[i], neighbours[i].X, neighbours[i].Y, neighbours[i].H)
-				heap.Push(&openSet, &neighbours[i])
+	for !currentNode.Eq(&destinationNode) {
+		neighbours := currentNode.Neighbours()
+		for i := range neighbours {
+			if In(closedSet, neighbours[i]) {
+				continue
+			} else {
+				neighbours[i].Parent = &currentNode
+				if !In(openSet, neighbours[i]) {
+					neighbours[i].H = ManhatanDistance(neighbours[i], destinationNode)
+					fmt.Fprintf(os.Stderr, "Pushing {node: %v x -> %d; y -> %d; h -> %.2f} into heap\n", neighbours[i], neighbours[i].X, neighbours[i].Y, neighbours[i].H)
+					heap.Push(&openSet, &neighbours[i])
+				}
 			}
 		}
-	}
 
-	newNode := heap.Pop(&openSet).(*Node)
-	fmt.Fprintf(os.Stderr, "Moving to {node: %v x -> %d; y -> %d; h -> %.2f} into heap\n", newNode, newNode.X, newNode.Y, newNode.H)
+		currentNode = *heap.Pop(&openSet).(*Node)
+		closedSet = append(closedSet, &currentNode)
+		fmt.Fprintf(os.Stderr, "Moving to {node: %v x -> %d; y -> %d; h -> %.2f} tile\n", currentNode, currentNode.X, currentNode.Y, currentNode.H)
+	}
 }
